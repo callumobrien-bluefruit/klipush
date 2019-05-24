@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 )
 
@@ -22,8 +23,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(sourceId)
-	fmt.Println(apiKey)
+	err = sendData(sourceId, apiKey)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
 func getOptions() (string, error) {
@@ -52,4 +56,18 @@ func readSecrets() (string, error) {
 	}
 
 	return apiKey.Value, nil
+}
+
+func sendData(sourceId, apiKey string) error {
+	url := "https://app.klipfolio.com/api/1.0/datasource-instances/" + sourceId + "/data"
+	req, err := http.NewRequest("PUT", url, os.Stdin)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("kf-api-key", apiKey)
+	req.Header.Add("Content-Type", "application/json")
+
+	client := &http.Client{}
+	_, err = client.Do(req)
+	return err
 }
