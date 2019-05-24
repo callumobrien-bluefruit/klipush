@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 )
 
@@ -14,7 +16,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	apiKey, err := readSecrets()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	fmt.Println(sourceId)
+	fmt.Println(apiKey)
 }
 
 func getOptions() (string, error) {
@@ -27,4 +36,20 @@ func getOptions() (string, error) {
 	}
 
 	return *sourceId, nil
+}
+
+func readSecrets() (string, error) {
+	const path string = "secrets.json"
+	apiKeyJson, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	var apiKey struct { Value string `json:"api-key"` }
+	err = json.Unmarshal(apiKeyJson, &apiKey)
+	if err != nil {
+		return "", err
+	}
+
+	return apiKey.Value, nil
 }
